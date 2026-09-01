@@ -3,9 +3,9 @@ package io.cvvexxx.matchx.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.cvvexxx.matchx.dto.BinanceTradeEvent;
 import jakarta.annotation.PostConstruct;
-import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.socket.CloseStatus;
@@ -15,17 +15,15 @@ import org.springframework.web.socket.client.standard.StandardWebSocketClient;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
 import java.net.URI;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 @Service
 public class BinanceMarketDataService extends TextWebSocketHandler {
 
     private static final Logger log = LoggerFactory.getLogger(BinanceMarketDataService.class);
+
+    @Value("{binance.api.websocket:wss://stream.binance.com:9443/ws/btcusdt@trade}")
     private static final String BINANCE_WS_URL = "wss://stream.binance.com:9443/ws/btcusdt@trade";
 
     private final ObjectMapper objectMapper;
