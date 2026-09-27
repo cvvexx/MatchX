@@ -1,7 +1,6 @@
 package io.cvvexxx.matchx.service;
 
 import io.cvvexxx.matchx.dto.BinanceTradeEvent;
-import tools.jackson.databind.json.JsonMapper;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
@@ -14,9 +13,12 @@ import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.client.standard.StandardWebSocketClient;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
+import tools.jackson.databind.ObjectMapper;
 
+import java.io.IOException;
 import java.net.URI;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -24,10 +26,9 @@ import java.util.concurrent.atomic.AtomicReference;
 public class BinanceMarketDataService extends TextWebSocketHandler {
 
     private static final Logger log = LoggerFactory.getLogger(BinanceMarketDataService.class);
-
     private static final long RECONNECT_DELAY_SECONDS = 5;
 
-    private final JsonMapper jsonMapper;
+    private final ObjectMapper objectMapper;
     private final String binanceWsUrl;
 
     private final StandardWebSocketClient client = new StandardWebSocketClient();
@@ -36,16 +37,17 @@ public class BinanceMarketDataService extends TextWebSocketHandler {
     );
 
     private final BlockingQueue<BinanceTradeEvent> eventQueue = new ArrayBlockingQueue<>(10_000);
-
     private final AtomicReference<BinanceTradeEvent> latestEvent = new AtomicReference<>();
-
     private final AtomicLong droppedEvents = new AtomicLong();
+
+    private final AtomicBoolean isConnectingOrConnected = new AtomicBoolean(false);
+    private final AtomicReference<WebSocketSession> currentSession = new AtomicReference<>();
 
     private volatile boolean running = true;
 
-    public BinanceMarketDataService(JsonMapper jsonMapper,
+    public BinanceMarketDataService(ObjectMapper objectMapper,
                                     @Value("${binance.api.websocket}") String binanceWsUrl) {
-        this.jsonMapper = jsonMapper;
+        this.objectMapper = objectMapper;
         this.binanceWsUrl = binanceWsUrl;
     }
 
@@ -58,18 +60,30 @@ public class BinanceMarketDataService extends TextWebSocketHandler {
     public void shutdown() {
         running = false;
         reconnectScheduler.shutdownNow();
+
+        WebSocketSession session = currentSession.getAndSet(null);
+        if (session != null && session.isOpen()) {
+            try {
+                session.close();
+            } catch (IOException e) {
+                log.warn("Ошибка при закрытии WebSocket сессии", e);
+            }
+        }
     }
 
     public void connect() {
-        if (!running) {
+        if (!running || !isConnectingOrConnected.compareAndSet(false, true)) {
             return;
         }
-        log.info("Подключение к Binance: {}", binanceWsUrl);
+
+        log.info("Подключение к Binance WebSocket: {}", binanceWsUrl);
         client.execute(this, null, URI.create(binanceWsUrl))
                 .whenComplete((session, error) -> {
                     if (error != null) {
                         log.error("Ошибка подключения. Реконнект через {} сек...", RECONNECT_DELAY_SECONDS, error);
                         scheduleReconnect();
+                    } else {
+                        currentSession.set(session);
                     }
                 });
     }
@@ -81,17 +95,16 @@ public class BinanceMarketDataService extends TextWebSocketHandler {
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) {
         try {
-            BinanceTradeEvent event = jsonMapper.readValue(message.getPayload(), BinanceTradeEvent.class);
+            BinanceTradeEvent event = objectMapper.readValue(message.getPayload(), BinanceTradeEvent.class);
 
             if (!eventQueue.offer(event)) {
                 long dropped = droppedEvents.incrementAndGet();
                 if (dropped % 1000 == 1) {
-                    log.warn("Очередь событий переполнена, потеряно событий: {}", dropped);
+                    log.warn("Очередь событий переполнена, пропущено событий: {}", dropped);
                 }
             }
 
             latestEvent.set(event);
-
         } catch (Exception e) {
             log.error("Ошибка парсинга JSON", e);
         }
@@ -101,7 +114,7 @@ public class BinanceMarketDataService extends TextWebSocketHandler {
     public void printLatestPriceToConsole() {
         BinanceTradeEvent event = latestEvent.get();
         if (event != null) {
-            log.info("ТИКЕР: {} | ЦЕНА: {} USDT | ОБЪЕМ СДЕЛКИ: {}",
+            log.info("Символ: {} | Цена: {} USDT | Объём сделки: {}",
                     event.symbol(), event.price(), event.quantity());
         }
     }
@@ -113,7 +126,9 @@ public class BinanceMarketDataService extends TextWebSocketHandler {
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
-        log.warn("Соединение закрыто: {}. Реконнект через {} сек...", status, RECONNECT_DELAY_SECONDS);
+        currentSession.set(null);
+        isConnectingOrConnected.set(false);
+        log.warn("Соединение закрыто: {}. Повтор через {} сек...", status, RECONNECT_DELAY_SECONDS);
         scheduleReconnect();
     }
 
@@ -124,7 +139,7 @@ public class BinanceMarketDataService extends TextWebSocketHandler {
         try {
             reconnectScheduler.schedule(this::connect, RECONNECT_DELAY_SECONDS, TimeUnit.SECONDS);
         } catch (RejectedExecutionException e) {
-            log.debug("Реконнект отменён: приложение останавливается");
+            log.debug("Планировщик остановлен, переподключение отменено");
         }
     }
 }
