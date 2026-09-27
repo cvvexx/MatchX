@@ -15,6 +15,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -68,23 +70,13 @@ public class Order {
     private OrderStatus status;
 
     @Column(name = "created_at", nullable = false, updatable = false)
+    @CreationTimestamp
     private Instant createdAt;
 
     @Column(name = "updated_at", nullable = false)
+    @UpdateTimestamp
     private Instant updatedAt;
 
-    @PrePersist
-    void onCreate() {
-        Instant now = Instant.now();
-        this.createdAt = now;
-        this.updatedAt = now;
-        if (this.status == null) {
-            this.status = OrderStatus.NEW;
-        }
-        if (this.filledQuantity == null) {
-            this.filledQuantity = BigDecimal.ZERO;
-        }
-    }
 
     @PreUpdate
     void onUpdate() {

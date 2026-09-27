@@ -4,15 +4,9 @@ import io.cvvexxx.matchx.dto.CreateOrderRequest;
 import io.cvvexxx.matchx.dto.OrderResponse;
 import io.cvvexxx.matchx.service.OrderService;
 import jakarta.validation.Valid;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.List;
 import java.util.UUID;
@@ -28,18 +22,27 @@ public class OrderController {
     }
 
     @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public OrderResponse create(@Valid @RequestBody CreateOrderRequest request) {
-        return orderService.create(request);
+    public ResponseEntity<OrderResponse> create(
+            @Valid @RequestBody CreateOrderRequest request,
+            UriComponentsBuilder uriComponentsBuilder
+    ) {
+        OrderResponse orderResponse = orderService.create(request);
+
+        return ResponseEntity.created(
+                        uriComponentsBuilder
+                                .replacePath("/api/v1/orders/{id}")
+                                .build(orderResponse.id())
+                )
+                .body(orderResponse);
     }
 
     @GetMapping("/{id}")
-    public OrderResponse getById(@PathVariable UUID id) {
-        return orderService.getById(id);
+    public ResponseEntity<OrderResponse> getById(@PathVariable UUID id) {
+        return ResponseEntity.ok(orderService.getById(id));
     }
 
     @GetMapping
-    public List<OrderResponse> getByUserId(@RequestParam UUID userId) {
-        return orderService.getByUserId(userId);
+    public ResponseEntity<List<OrderResponse>> getByUserId(@RequestParam UUID userId) {
+        return ResponseEntity.ok(orderService.getByUserId(userId));
     }
 }
