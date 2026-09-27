@@ -1,4 +1,4 @@
-package io.cvvexxx.matchx.entity;
+package io.cvvexxx.matchx.entity.order;
 
 public enum OrderStatus {
     NEW,

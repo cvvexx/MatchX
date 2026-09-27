@@ -110,7 +110,7 @@ public class BinanceMarketDataService extends TextWebSocketHandler {
         }
     }
 
-    @Scheduled(fixedRate = 1000)
+    @Scheduled(fixedRate = 10000)
     public void printLatestPriceToConsole() {
         BinanceTradeEvent event = latestEvent.get();
         if (event != null) {

@@ -1,6 +1,6 @@
 package io.cvvexxx.matchx.repository;
 
-import io.cvvexxx.matchx.entity.Order;
+import io.cvvexxx.matchx.entity.order.Order;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

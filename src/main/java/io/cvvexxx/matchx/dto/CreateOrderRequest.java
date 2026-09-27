@@ -1,7 +1,7 @@
 package io.cvvexxx.matchx.dto;
 
-import io.cvvexxx.matchx.entity.OrderSide;
-import io.cvvexxx.matchx.entity.OrderType;
+import io.cvvexxx.matchx.entity.order.OrderSide;
+import io.cvvexxx.matchx.entity.order.OrderType;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

@@ -1,9 +1,9 @@
 package io.cvvexxx.matchx.dto;
 
-import io.cvvexxx.matchx.entity.Order;
-import io.cvvexxx.matchx.entity.OrderSide;
-import io.cvvexxx.matchx.entity.OrderStatus;
-import io.cvvexxx.matchx.entity.OrderType;
+import io.cvvexxx.matchx.entity.order.Order;
+import io.cvvexxx.matchx.entity.order.OrderSide;
+import io.cvvexxx.matchx.entity.order.OrderStatus;
+import io.cvvexxx.matchx.entity.order.OrderType;
 
 import java.math.BigDecimal;
 import java.time.Instant;

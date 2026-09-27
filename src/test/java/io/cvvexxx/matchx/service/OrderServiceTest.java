@@ -2,10 +2,10 @@ package io.cvvexxx.matchx.service;
 
 import io.cvvexxx.matchx.dto.CreateOrderRequest;
 import io.cvvexxx.matchx.dto.OrderResponse;
-import io.cvvexxx.matchx.entity.Order;
-import io.cvvexxx.matchx.entity.OrderSide;
-import io.cvvexxx.matchx.entity.OrderStatus;
-import io.cvvexxx.matchx.entity.OrderType;
+import io.cvvexxx.matchx.entity.order.Order;
+import io.cvvexxx.matchx.entity.order.OrderSide;
+import io.cvvexxx.matchx.entity.order.OrderStatus;
+import io.cvvexxx.matchx.entity.order.OrderType;
 import io.cvvexxx.matchx.repository.OrderRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
