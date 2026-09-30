@@ -70,7 +70,7 @@ public class UserService {
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<Map<String, String>> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
         return ResponseEntity
-                .status(HttpStatus.CONFLICT) // 409 Conflict
+                .status(HttpStatus.CONFLICT)
                 .body(Map.of("error", "Пользователь с таким email уже существует или произошел конфликт данных"));
     }
 
